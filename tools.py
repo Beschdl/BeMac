@@ -10,9 +10,11 @@ import time
 turnState = 0
 gp = vg.VX360Gamepad()
 turnSens = 120
+lookSens = 512
 turnBound = 32766/turnSens
 lastClutch = 0
-
+verbose = True
+lCoords = True
 
 # Typical Midi Input: [[[176, 18, 59, 0], 1102288]] also i.read(1)[0][0][0,1,2,3]
 # 0: Status
@@ -30,7 +32,8 @@ def act(pr, inp):
     elif pr == 1:
         gp.release_button(button=inp)
     gp.update()
-    print(str(pr) + "  " + str(inp))
+    if (verbose):
+        print(str(pr) + "  " + str(inp))
 
 
 class B:
@@ -50,15 +53,22 @@ class B:
     X = 0x4000
     Y = 0x8000
 
+xVal = 0
+yVal = 0
 
 def check(read):
-    print(read)
+
+    if (verbose):
+        print(read)
     channel = read[0][0][1]
     status = read[0][0][0]
     value = read[0][0][2]
     BTTN = 0x0000
     global turnState
     global lastClutch
+    global xVal
+    global yVal
+
     if (channel==25):
         if(value>63): # Aktualisieren
             turnState+=value-128
@@ -68,31 +78,48 @@ def check(read):
             turnState = -turnBound
         elif(turnState>turnBound):
             turnState = turnBound
-        gp.left_joystick(x_value=int(turnState*turnSens), y_value=0)
-        print(turnState)
+        xVal = int(turnState*turnSens)
+        gp.left_joystick(x_value=xVal, y_value=yVal)
+        print("LenkStatus: "+str(turnState))
+        if (lCoords):
+            print("(" + str(xVal) + ", " + str(yVal) + ")")
+
     if (status==144):       # Muss ein Knopf sein
         if(channel==51): # start
             BTTN = B.START
+            print("Start")
         elif(channel==59): # zurück
             BTTN = B.BACK
+            print("Zurück")
         elif(channel==67): # stupid; sollte ich ersetzen
             BTTN = B.GUIDE
+            print("????")
         elif(channel==76): # Hupe
             BTTN = B.LEFT_THUMB
+            print("Hupe")
         elif(channel==72):
             BTTN = B.RIGHT_THUMB
+            print("Bremse oder sowas")
         elif(channel==75):
             BTTN = B.A
+            print("S")
         elif(channel==52):
             BTTN = B.Y
+            print("Y")
         elif(channel==48): # reset
             gp.reset()
             turnState = 0
+            yVal = 0
+            xVal = 0
+
+            print("Reset!")
         #Gedrückt/losgelassen?
         if (value==127):
             act(0, BTTN)
         elif (value==0):
             act(1, BTTN)
+
+
     if (status==176):
         if (channel==9): # Schaltung
             if (lastClutch == 0):
@@ -111,11 +138,17 @@ def check(read):
                     gp.release_button(B.B)
                     gp.release_button(B.X)
         if (channel==10):
-            gp.right_joystick(x_value=value, y_value=0)
-        if (channel==12):   # Bremse
+            yVal = int((value-64)*lookSens)
+            gp.left_joystick(x_value=xVal, y_value=yVal)
+            print("Schauen: " + str(value))
+            if (lCoords):
+                print("(" + str(xVal) + ", " + str(yVal) + ")")
+        if (channel==12):   # Beschleunigung
             gp.right_trigger(value=(value*2))
-        if (channel==11):   # Beschleunigung
+            print("Gas: " + str(value))
+        if (channel==11):   # Bremse
             gp.left_trigger(value=(value*2))
+            print("Bremse: " + str(value))
         if (channel==8):
             print()
     gp.update()
