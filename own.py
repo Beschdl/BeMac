@@ -19,5 +19,6 @@ def main():
     while True:
         if i.poll():
             tools.check(i.read(1))
+        # time.sleep(0.000032) # Exakte Zeit für nächsten MIDI-Input
 
 main()

@@ -59,7 +59,7 @@ def check(read):
     BTTN = 0x0000
     global turnState
     global lastClutch
-    if (channel==24):
+    if (channel==25):
         if(value>63): # Aktualisieren
             turnState+=value-128
         elif(value<64):
@@ -70,12 +70,12 @@ def check(read):
             turnState = turnBound
         gp.left_joystick(x_value=int(turnState*turnSens), y_value=0)
         print(turnState)
-    if (status==144):
+    if (status==144):       # Muss ein Knopf sein
         if(channel==51): # start
             BTTN = B.START
         elif(channel==59): # zurück
             BTTN = B.BACK
-        elif(channel==67): # stupid
+        elif(channel==67): # stupid; sollte ich ersetzen
             BTTN = B.GUIDE
         elif(channel==76): # Hupe
             BTTN = B.LEFT_THUMB
@@ -105,14 +105,16 @@ def check(read):
                     print("Switching Gears down")
                     lastClutch = 1
             elif(lastClutch==1):
-                if(value>20 and value<110):
+                if(value>10 and value<120):
                     lastClutch = 0
                     print("Switching Gears neutral")
                     gp.release_button(B.B)
                     gp.release_button(B.X)
-        if (channel==11):   # Beschleunigung
-            gp.right_trigger(value=(value*2))
+        if (channel==10):
+            gp.right_joystick(x_value=value, y_value=0)
         if (channel==12):   # Bremse
+            gp.right_trigger(value=(value*2))
+        if (channel==11):   # Beschleunigung
             gp.left_trigger(value=(value*2))
         if (channel==8):
             print()
