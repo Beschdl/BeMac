@@ -32,6 +32,7 @@ def act(pr, inp):
     gp.update()
     print(str(pr) + "  " + str(inp))
 
+
 class B:
     UP = 0x0001
     DOWN = 0x0002
